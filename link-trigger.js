@@ -1,5 +1,5 @@
 /**
- * version 1.4
+ * version 1.5
  * javascript链式触发器
  * 动态监听json对象，为json对象提供事件的链式触发功能，当值改变时依次执行json对象关联的所有对象的执行规则
  * v1.0 根据指定计算规则动态改变存在链式关系的数据值
@@ -11,6 +11,7 @@
  * v1.4 兼容ie9-11
  *      新增执行规则的调用函数体定义方式, 可直接传入函数(需注意函数内引用外部变量作用域的问题,若对此不熟悉, 建议还是用字符串的方式调用)
  *      优化代码可读性
+ * v1.5 简化节点的属性规则的声明，改为json格式，调整了代码结构
  * ******************************
  * 注意：不要取与LinkExecVal类型包含的字段重名 (value,__linkElements,__rule,__root,__parent,setRule,setLinkElements,exec,add,sub,mul,div)
  * 内置变量：root 为根节点 parent为父节点
@@ -18,30 +19,30 @@
  * 例1  ----
  * 要达到效果sum 会根据a和b的和自动变化，sum = a + b
  * 代码：
-    var test1 = LinkTrigger.init({a:1,b:2,sum:3,sum2:4}, [
-	// LinkPropRuleMap构造函数简介
-	// 第一个参数为触发节点名称
-	// 第二个参数为本节点所关联的触发节点，参数用关联节点名称的字符串，多个关联节点用字符串数组即可
-	// 第三个参数为被触发的执行规则，可用字符串或函数，函数为参数时需要注意内部引用外部变量作用域的问题
-    new LinkPropRuleMap("a","sum")
-    ,new LinkPropRuleMap("b","sum")
-    ,new LinkPropRuleMap("sum",null,"parent.sum = parent.a.add(parent.b);console.log('test1.sum='+parent.sum.value);") // 字符串的回调方式
-    ,new LinkPropRuleMap("sum2",null,
-         function(parent, root) {parent.sum2 = parent.a.add(parent.b);console.log('test1.sum2='+parent.sum2.value);}) // 函数的回调方式
-    ])
- * 改变test.a的值  test1.a = 3;
- * 控制台输出结果  test1.sum=5
+    var test1 = linkTrigger.init({a:1,b:2,sum:3,sum2:4}, 
+	// property为触发节点名称
+	// relatedProps为本节点所关联的触发节点，参数用关联节点名称的字符串，多个关联节点用字符串数组即可
+	// rule为被触发的执行规则，可用字符串或函数，函数为参数时需要注意内部引用外部变量作用域的问题
+    [{property:"a",relatedProps:"sum"},
+    {property:"b",relatedProps:"sum"},
+    // 字符串的回调方式
+    {property:"sum",rule:"parent.sum = parent.a.add(parent.b);console.log('test1.sum='+parent.sum.value);"},
+    // 函数的回调方式
+    {property:"sum2",rule:function(parent, root) {parent.sum2 = parent.a.add(parent.b);console.log('test1.sum2='+parent.sum2.value);}}
+    ]);
+   test1.a = 3  //改变test.a的值
+ * 控制台输出结果:  test1.sum=5
  * （注意，之所以没有输出sum2，是因为a和b节点并没有和sum2节点关联上，需要显示的在第二个参数指定，
  *   比如想要在初始化后在改变a节点的值时就能同时触发sum1和sum2的执行规则的话，传入["sum","sum2"]即可
  *  ）
- * // 改变关联节点会触发执行规则，由于当时需求需要，所以是触发所有关联节点的执行规则
- * // 各位可以自行更改为只触发新增的节点，在PropertyListenerProxy中对名为__linkElements的属性进行判断、特殊处理即可
- * test1.a.addLinkElement(test1.sum2)
- * 控制台输出结果  test1.sum=5
- *                 test1.sum2=5
- * // 删除关联节点后，被删除节点不再触发规则，遗留的关联节点依旧会触发执行规则
- * test1.a.delLinkElement(test1.sum)
- * 控制台输出结果  test1.sum2=5
+   // 改变关联节点会触发执行规则，由于当时需求需要，所以是触发所有关联节点的执行规则
+   // 各位可以自行更改为只触发新增的节点，在PropertyListenerProxy中对名为__linkElements的属性进行判断、特殊处理即可
+   test1.a.addLinkElement(test1.sum2)
+ * 控制台输出结果:   test1.sum=5
+ *              test1.sum2=5
+   // 删除关联节点后，被删除节点不再触发规则，遗留的关联节点依旧会触发执行规则
+   test1.a.delLinkElement(test1.sum)
+ * 控制台输出结果:  test1.sum2=5
  *
  * 例2  ----
  * 在例1的基础上引入递归关系，要达到效果
@@ -55,22 +56,29 @@
  *      factor2 会根据c和d的差自动变化，factor2=c-d，
  *      result  会根据factor1为底数、factor2为指数的指数运算结果自动变化  result = Math.pow(factor1, factor2)
  *  代码：
- *  var test2 = LinkTrigger.init({
+    var test2 = linkTrigger.init({
          args: {
           a:1,b:1,c:3,d:1
         },
         factor1:2,factor2:2,result:4
      }, [
-    new LinkPropRuleMap("args.a","factor1")
-    ,new LinkPropRuleMap("args.b","factor1")
-    ,new LinkPropRuleMap("factor1","result",function(parent,root){parent.factor1=parent.args.a.add(parent.args.b);})
-    ,new LinkPropRuleMap("args.c","factor2")
-    ,new LinkPropRuleMap("args.d","factor2")
-    ,new LinkPropRuleMap("factor2","result","parent.factor2=parent.args.c.sub(parent.args.d);")
-    ,new LinkPropRuleMap("result",null,"parent.result = Math.pow(parent.factor1.value,parent.factor2.value);\
-    console.log('test2.result='+parent.result.value)")]);
- * 改变test.a的值  test2.args.a = 2
- * 控制台输出结果  test2.result=9
+    {property:"args.a",relatedProps:"factor1"},
+    {property:"args.b",relatedProps:"factor1"},
+    {property:"factor1",relatedProps:"result",rule:function(parent,root){parent.factor1=parent.args.a.add(parent.args.b);}},
+    {property:"args.c",relatedProps:"factor2"},
+    {property:"args.d",relatedProps:"factor2"},
+    {property:"factor2",relatedProps:"result",rule:"parent.factor2=parent.args.c.sub(parent.args.d);"},
+    {property:"result",rule:function(parent,root){parent.result = Math.pow(parent.factor1.value,parent.factor2.value);
+    console.log('test2.result='+parent.result.value);}}
+    ]);
+   test2.args.a = 2  // 改变test.a的值
+ * 控制台输出结果:  test2.result=9
+   // 删除factor1的关联节点
+   test2.factor1.delLinkElement(test2.result)
+   test2.args.a = 3
+ * 控制台没有输出打印，原因： factor1和result的关联关系已经不存在了，所以无法触发result的执行规则
+   test2.args.c = 4
+ * 控制台输出结果:  test2.result=64   注意了，为什么是result是64，虽然上一句js语句没有触发结果，但是a和factor1的关系还在，所以factor1的值是变成了4的
  *
  * 当时写这个js时比较仓促，可能还有诸多问题，各位若是发现还望指出缺陷，如有需要github的权限可以联系我，
  * 邮箱miss24@qq.com，QQ1783386996
@@ -80,7 +88,14 @@ function LinkTrigger() {
     // obj 初始化的json对象
     // rules 关联规则
     this.init = function (obj, rules) {
-        return __constructor(obj, rules);
+    	var arr = [];
+    	if (rules instanceof Array && rules.length > 0) {
+	    	for (var i=0; i<rules.length; i++) {
+	    		var r = rules[i];
+	    		arr.push({__property:r.property,__relatedProps:r.relatedProps instanceof Array?r.relatedProps:!!r.relatedProps?[r.relatedProps]:[],__rule:r.rule});
+	    	}
+    	}
+        return __constructor(obj, arr);
     };
     // 动态追加
     // info -----data  数据
@@ -94,6 +109,13 @@ function LinkTrigger() {
     this.appendLinkObject = function(info, rules) {
         if (!!info) {
             var map = info.map.split(".");
+            var arr = [];
+        	if (rules instanceof Array && rules.length > 0) {
+    	    	for (var i=0; i<rules.length; i++) {
+    	    		var r = rules[i];
+    	    		arr.push({__property:r.property,__relatedProps:r.relatedProps instanceof Array?r.relatedProps:!!r.relatedProps?[r.relatedProps]:[],__rule:r.rule});
+    	    	}
+        	}
             __constructor(info.data, rules, {root:info.root,map:map});
         }
     };
@@ -166,7 +188,7 @@ function LinkTrigger() {
                 child.__root = forceInfo?forceInfo.root:object;
                 child.__parent = parent;
                 child.setRule(m.__rule);
-                child.setLinkElements(m.__elements.map(function(i) {
+                child.setLinkElements(m.__relatedProps.map(function(i) {
                     return getEndElement(child.__root,i.split("."));
                 }));
             }
@@ -270,7 +292,7 @@ function LinkTrigger() {
             return getEndElement(object[map.shift()], map, lastIndex);
         }
     }
-
+    //获取对象的键集合
     function getObjectKeys(obj) {
         var arr = [];
         if (!!obj) {
@@ -280,234 +302,215 @@ function LinkTrigger() {
         }
         return arr;
     }
-}
-window.LinkTrigger = new LinkTrigger();
-
-function PropertyListenerProxy(object, proxyInfo) {
-    var that = this;
-    this.__proto__ = object;
-    Object.defineProperty(this, "__source__", {
-        value: object,
-        enumerable:false,
-        configurable:true,
-        writable: true
-    });
-
-    var keys = [];
-    if (!!object) {
-        for (var k in object) {
-            keys.push(k);
-        }
-    }
-    var keys2 = ["value","__linkElements","__rule","__root","__parent","setRule","setLinkElements","addLinkElement",
-        "delLinkElement","exec","add","sub","mul","div","toFixed","toString"];
-
-    keys.concat(keys2).forEach(function(property) {
-        Object.defineProperty(that, property, {
-            set: function(value) {
-                if (!!proxyInfo && typeof proxyInfo.set == "function") {
-                    proxyInfo.set(that.__source__, property, value, that);
-                }
-            },
-            get: function() {
-                return that.__source__[property];
-            },
-            enumerable: keys2.indexOf(property)>-1?false:true,
-            configurable:true
+    //属性监听代理
+    function PropertyListenerProxy(object, proxyInfo) {
+        var that = this;
+        this.__proto__ = object;
+        Object.defineProperty(this, "__source__", {
+            value: object,
+            enumerable:false,
+            configurable:true,
+            writable: true
         });
-    });
 
-    this.remove = function(index) {
-        if (this.__source__ instanceof Array) {
-            this.__source__.splice(index, 1);
-            delete this[this.__source__.length];
+        var keys = [];
+        if (!!object) {
+            for (var k in object) {
+                keys.push(k);
+            }
         }
+        var keys2 = ["value","__linkElements","__rule","__root","__parent","setRule","setLinkElements","addLinkElement",
+            "delLinkElement","exec","add","sub","mul","div","toFixed","toString"];
+
+        keys.concat(keys2).forEach(function(property) {
+            Object.defineProperty(that, property, {
+                set: function(value) {
+                    if (!!proxyInfo && typeof proxyInfo.set == "function") {
+                        proxyInfo.set(that.__source__, property, value, that);
+                    }
+                },
+                get: function() {
+                    return that.__source__[property];
+                },
+                enumerable: keys2.indexOf(property)>-1?false:true,
+                configurable:true
+            });
+        });
+
+        this.remove = function(index) {
+            if (this.__source__ instanceof Array) {
+                this.__source__.splice(index, 1);
+                delete this[this.__source__.length];
+            }
+        }
+        this.push = function(ele, index) {
+            if (this.__source__ instanceof Array) {
+                var originLen = this.__source__.length
+                index = index || originLen;
+                this.__source__.splice(index, 0, ele);
+                !function(property) {
+                    Object.defineProperty(that, property, {
+                        set: function(value) {
+                            if (!!proxyInfo && typeof proxyInfo.set == "function") {
+                                proxyInfo.set(that.__source__, property, value, that);
+                            }
+                        },
+                        get: function() {
+                            return that.__source__[property];
+                        },
+                        enumerable:true,
+                        configurable:true
+                    });
+                }(originLen);
+            }
+        }
+        this.forEach = function(callback) {
+            if (this.__source__ instanceof Array) {
+                this.__source__.forEach(callback);
+            }
+        }
+        Object.defineProperties(this, {
+            "__proto__": {
+                enumerable:false,
+                configurable:true,
+                writable: true
+            },
+            "remove": {
+                enumerable:false
+            },
+            "push": {
+                enumerable:false
+            },
+            "forEach": {
+                enumerable:false
+            }
+        });
     }
-    this.push = function(ele, index) {
-        if (this.__source__ instanceof Array) {
-            var originLen = this.__source__.length
-            index = index || originLen;
-            this.__source__.splice(index, 0, ele);
-            !function(property) {
-                Object.defineProperty(that, property, {
-                    set: function(value) {
-                        if (!!proxyInfo && typeof proxyInfo.set == "function") {
-                            proxyInfo.set(that.__source__, property, value, that);
-                        }
-                    },
-                    get: function() {
-                        return that.__source__[property];
-                    },
-                    enumerable:true,
-                    configurable:true
-                });
-            }(originLen);
+
+    /**
+     * 链式执行触发值
+     * @param value 值
+     * @param parent 父对象
+     */
+    function LinkExecVal (value, parent) {
+        if (typeof value != "number") {
+            throw "value必须为Number类型";
         }
+
+        this.value=value;
+        this.__linkElements=[];
+        this.__rule="";
+        this.__root = null;
+        this.__parent = parent;
+        this.setRule = function(rule){this.__rule = rule;};
+        this.setLinkElements = function(ele) {if (ele instanceof Array){this.__linkElements = ele;}};
+        this.addLinkElement = function(ele) {this.__linkElements.push(ele);this.__linkElements=this.__linkElements;};
+        this.delLinkElement = function(ele) {var i=this.__linkElements.indexOf(ele);if(i>-1) {this.__linkElements.splice(i,1);}this.__linkElements=this.__linkElements;};
+        this.exec = function() {
+            if (typeof this.__rule =="function") {
+                this.__rule(this.__parent, this.__root);
+            } else if (typeof this.__rule == "string") {
+                new Function("parent","root",this.__rule)(this.__parent, this.__root);
+            }
+        };
+
+        // 常用计算函数
+        this.add = function(that) { // 加
+            var num = that instanceof LinkExecVal ? that.value : that;
+            if (typeof num != "number" && parseFloat(num).toString() == "NaN") throw "argument must be number";
+            var a = this.value.toString(), // 取数字的字符串
+                b = num.toString(),
+                // 取适配数为10的N次方，N为两个加数的小数位数较大数
+                aflen = a.indexOf(".")>0 ? a.length - a.indexOf(".") - 1 : 0,
+                bflen = b.indexOf(".")>0 ? b.length - b.indexOf(".") - 1 : 0;
+            return ( aflen > bflen ? Number(a.replace(/\./g,""))+Number(b.replace(/\./g,""))*Math.pow(10,aflen-bflen)
+                : Number(a.replace(/\./g,""))*Math.pow(10,bflen-aflen)+Number(b.replace(/\./g,"")) )/Math.pow(10, Math.max(aflen, bflen));
+        };
+        this.sub = function(that) { // 减
+            var num = that instanceof LinkExecVal ? that.value : that;
+            return this.add(-num);
+        };
+        this.mul = function(that) { // 乘
+            var num = that instanceof LinkExecVal ? that.value : that;
+            if (typeof num != "number" && parseFloat(num).toString() == "NaN") throw "argument must be number";
+            var a = this.value.toString(), // 取数字的字符串
+                b = num.toString(),
+                // 取适配数为10的N次方，N为两个加数的小数位数之和
+                adapterNum = Math.pow(10, (a.indexOf(".")>0 ? a.length - a.indexOf(".") - 1 : 0) + (b.indexOf(".")>0 ? b.length - b.indexOf(".") - 1 : 0));
+            return Number(a.replace(/\./g,"")) * Number(b.replace(/\./g,"")) / adapterNum;
+        };
+        this.div = function(that) { // 除
+            var num = that instanceof LinkExecVal ? that.value : that;
+            if (typeof num != "number" && parseFloat(num).toString() == "NaN" || num == 0) throw "argument must be number and none-zero";
+            var a = this.value.toString(), // 取数字的字符串
+                b = num.toString(),
+                // 取适配数为10的N次方，N为两个加数的小数位数之差的绝对值
+                sub = (a.indexOf(".")>0 ? a.length - a.indexOf(".") - 1 : 0)-(b.indexOf(".")>0 ? b.length - b.indexOf(".") - 1 : 0),
+                adapterNum = Math.pow(10, Math.abs(sub)),
+                // 整数除结果
+                r = Number(a.replace(/\./g,"")) / Number(b.replace(/\./g,""));
+            return sub > 0 ? r / adapterNum : r * adapterNum;
+        };
+        this.toFixed = function(len) {
+            if (typeof len != "number" && parseFloat(len).toString() == "NaN" || len < 0) throw "argument must be number and positive";
+            if (this.value.toString().indexOf(".") > -1) {
+                // 用正则提取数字的整数、小数、和是否进位依据部分
+                return Number(this.value.toString().replace(new RegExp("(\\d+)\\.(\\d{"+len+"})(\\d?)\\d*"), function(match,pattern1,pattern2,pattern3,index) {
+                    return (Number(pattern1+pattern2)+(Number(pattern3)>4?1:0))/Math.pow(10,pattern2.length);
+                }));
+            } else return this.value;
+        };
+        this.toString = function () {
+            return this.value.toString();
+        }
+        Object.defineProperties(this, {
+            "value": {
+                enumerable:false,
+                configurable:true,
+                writable: true
+            },
+            "__linkElements": {
+                enumerable:false,
+                configurable:true,
+                writable: true
+            }, "__rule": {
+                enumerable:false,
+                configurable:true,
+                writable: true
+            }, "__root": {
+                enumerable:false,
+                configurable:true,
+                writable: true
+            }, "__parent": {
+                enumerable:false,
+                configurable:true,
+                writable: true
+            },
+            "setRule": {
+                enumerable:false
+            }, "setLinkElements": {
+                enumerable:false
+            }, "addLinkElement": {
+                enumerable:false
+            }, "delLinkElement": {
+                enumerable:false
+            }, "exec": {
+                enumerable:false
+            }, "add": {
+                enumerable:false
+            }, "sub": {
+                enumerable:false
+            }, "mul": {
+                enumerable:false
+            }, "div": {
+                enumerable:false
+            }, "toFixed": {
+                enumerable:false
+            }, "toString": {
+                enumerable:false
+            }
+        });
     }
-    this.forEach = function(callback) {
-        if (this.__source__ instanceof Array) {
-            this.__source__.forEach(callback);
-        }
-    }
-    Object.defineProperties(this, {
-        "__proto__": {
-            enumerable:false,
-            configurable:true,
-            writable: true
-        },
-        "remove": {
-            enumerable:false
-        },
-        "push": {
-            enumerable:false
-        },
-        "forEach": {
-            enumerable:false
-        }
-    });
 }
 
-/**
- * 链式属性触发规则
- * @param property 触发节点名称
- * @param elements 本节点所关联的触发节点，参数用关联节点名称的字符串，多个关联节点用字符串数组即可
- * @param rule 被触发的执行规则，可用字符串或函数，函数为参数时需要注意内部引用外部变量作用域的问题
- * @returns
- */
-function LinkPropRuleMap (property,elements,rule) {
-    this.__property = property;
-    if (elements instanceof Array) {
-        this.__elements = elements;
-    } else if (elements) {
-        this.__elements = [elements];
-    } else {
-        this.__elements = [];
-    }
-    this.__rule = rule;
-}
-
-/**
- * 链式执行触发值
- * @param value 值
- * @param parent 父对象
- * @returns
- */
-function LinkExecVal (value, parent) {
-    if (typeof value != "number") {
-        throw "value必须为Number类型";
-    }
-
-    this.value=value;
-    this.__linkElements=[];
-    this.__rule="";
-    this.__root = null;
-    this.__parent = parent;
-    this.setRule = function(rule){this.__rule = rule;};
-    this.setLinkElements = function(ele) {if (ele instanceof Array){this.__linkElements = ele;}};
-    this.addLinkElement = function(ele) {this.__linkElements.push(ele);this.__linkElements=this.__linkElements;};
-    this.delLinkElement = function(ele) {var i=this.__linkElements.indexOf(ele);if(i>-1) {this.__linkElements.splice(i,1);}this.__linkElements=this.__linkElements;};
-    this.exec = function() {
-        if (typeof this.__rule =="function") {
-            this.__rule(this.__parent, this.__root);
-        } else if (typeof this.__rule == "string") {
-            new Function("parent","root",this.__rule)(this.__parent, this.__root);
-        }
-    };
-
-    // 常用计算函数
-    this.add = function(that) { // 加
-        var num = that instanceof LinkExecVal ? that.value : that;
-        if (typeof num != "number" && parseFloat(num).toString() == "NaN") throw "argument must be number";
-        var a = this.value.toString(), // 取数字的字符串
-            b = num.toString(),
-            // 取适配数为10的N次方，N为两个加数的小数位数较大数
-            aflen = a.indexOf(".")>0 ? a.length - a.indexOf(".") - 1 : 0,
-            bflen = b.indexOf(".")>0 ? b.length - b.indexOf(".") - 1 : 0;
-        return ( aflen > bflen ? Number(a.replace(/\./g,""))+Number(b.replace(/\./g,""))*Math.pow(10,aflen-bflen)
-            : Number(a.replace(/\./g,""))*Math.pow(10,bflen-aflen)+Number(b.replace(/\./g,"")) )/Math.pow(10, Math.max(aflen, bflen));
-    };
-    this.sub = function(that) { // 减
-        var num = that instanceof LinkExecVal ? that.value : that;
-        return this.add(-num);
-    };
-    this.mul = function(that) { // 乘
-        var num = that instanceof LinkExecVal ? that.value : that;
-        if (typeof num != "number" && parseFloat(num).toString() == "NaN") throw "argument must be number";
-        var a = this.value.toString(), // 取数字的字符串
-            b = num.toString(),
-            // 取适配数为10的N次方，N为两个加数的小数位数之和
-            adapterNum = Math.pow(10, (a.indexOf(".")>0 ? a.length - a.indexOf(".") - 1 : 0) + (b.indexOf(".")>0 ? b.length - b.indexOf(".") - 1 : 0));
-        return Number(a.replace(/\./g,"")) * Number(b.replace(/\./g,"")) / adapterNum;
-    };
-    this.div = function(that) { // 除
-        var num = that instanceof LinkExecVal ? that.value : that;
-        if (typeof num != "number" && parseFloat(num).toString() == "NaN" || num == 0) throw "argument must be number and none-zero";
-        var a = this.value.toString(), // 取数字的字符串
-            b = num.toString(),
-            // 取适配数为10的N次方，N为两个加数的小数位数之差的绝对值
-            sub = (a.indexOf(".")>0 ? a.length - a.indexOf(".") - 1 : 0)-(b.indexOf(".")>0 ? b.length - b.indexOf(".") - 1 : 0),
-            adapterNum = Math.pow(10, Math.abs(sub)),
-            // 整数除结果
-            r = Number(a.replace(/\./g,"")) / Number(b.replace(/\./g,""));
-        return sub > 0 ? r / adapterNum : r * adapterNum;
-    };
-    this.toFixed = function(len) {
-        if (typeof len != "number" && parseFloat(len).toString() == "NaN" || len < 0) throw "argument must be number and positive";
-        if (this.value.toString().indexOf(".") > -1) {
-            // 用正则提取数字的整数、小数、和是否进位依据部分
-            return Number(this.value.toString().replace(new RegExp("(\\d+)\\.(\\d{"+len+"})(\\d?)\\d*"), function(match,pattern1,pattern2,pattern3,index) {
-                return (Number(pattern1+pattern2)+(Number(pattern3)>4?1:0))/Math.pow(10,pattern2.length);
-            }));
-        } else return this.value;
-    };
-    this.toString = function () {
-        return this.value.toString();
-    }
-    Object.defineProperties(this, {
-        "value": {
-            enumerable:false,
-            configurable:true,
-            writable: true
-        },
-        "__linkElements": {
-            enumerable:false,
-            configurable:true,
-            writable: true
-        }, "__rule": {
-            enumerable:false,
-            configurable:true,
-            writable: true
-        }, "__root": {
-            enumerable:false,
-            configurable:true,
-            writable: true
-        }, "__parent": {
-            enumerable:false,
-            configurable:true,
-            writable: true
-        },
-        "setRule": {
-            enumerable:false
-        }, "setLinkElements": {
-            enumerable:false
-        }, "addLinkElement": {
-            enumerable:false
-        }, "delLinkElement": {
-            enumerable:false
-        }, "exec": {
-            enumerable:false
-        }, "add": {
-            enumerable:false
-        }, "sub": {
-            enumerable:false
-        }, "mul": {
-            enumerable:false
-        }, "div": {
-            enumerable:false
-        }, "toFixed": {
-            enumerable:false
-        }, "toString": {
-            enumerable:false
-        }
-    });
-}
+window.linkTrigger = new LinkTrigger();

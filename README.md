@@ -4,4 +4,4 @@
 
 ## 文档介绍
 link-trigger.js   ---- 链式触发器
-float-cal-util.js ---- 原生js浮点计算bug修复，以及进位时统一为四舍五入
+float-cal-util.js ---- 原生js浮点计算bug修复，以及统一各主流浏览器的小数在进位时的规则(四舍五入)
