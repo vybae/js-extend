@@ -15,9 +15,9 @@ demo
 ##### 要达到效果sum 会根据a和b的和自动变化，sum = a + b
 ##### 代码：
     var test1 = linkTrigger.init({a:1,b:2,sum:3,sum2:4},
-    	// property为触发节点名称
-    	// relatedProps为本节点所关联的触发节点，参数用关联节点名称的字符串，多个关联节点用字符串数组即可
-    	// rule为被触发的执行规则，可用字符串或函数，函数为参数时需要注意内部引用外部变量作用域的问题
+      // property为触发节点名称
+      // relatedProps为本节点所关联的触发节点，参数用关联节点名称的字符串，多个关联节点用字符串数组即可
+      // rule为被触发的执行规则，可用字符串或函数，函数为参数时需要注意内部引用外部变量作用域的问题
       [{property:"a",relatedProps:"sum"},
       {property:"b",relatedProps:"sum"},
       // 字符串的回调方式
@@ -44,7 +44,7 @@ test1.a.delLinkElement(test1.sum)
  
 ### 例2
 ##### 在例1的基础上引入递归关系，要达到效果
-数据结构<br>
+    数据结构
     {
       args: {
         a:1,b:1,c:3,d:1
@@ -58,7 +58,7 @@ test1.a.delLinkElement(test1.sum)
 ##### result  会根据factor1为底数、factor2为指数的指数运算结果自动变化  result = Math.pow(factor1, factor2)
 ##### 代码：
     var test2 = linkTrigger.init({
-         args: {
+        args: {
           a:1,b:1,c:3,d:1
         },
         factor1:2,factor2:2,result:4
