@@ -38,14 +38,15 @@ Number.prototype.divide = function(num) {
 
 // 四舍五入
 // 重写toFixed，浏览器之间遇5进位判断混乱，部分浏览器下toFixed遇5不进位(比如2.55 toFixed(1) 为2.5)，部分遇5进位
-// retainDigits:  保留小数的位数
-// meet5carry:  是否遇5进位，参数默认值为true，逻辑为遇5进位
+// retainDigits:  保留小数的位数，参数默认值为0，必须为正整数或不传
+// meet5carry:  是否遇5进位的逻辑，参数默认值为true，必须为布尔值或不传
 Number.prototype.toFixed = function(retainDigits, meet5carry) {
-    if (typeof retainDigits != "number" && parseFloat(retainDigits).toString() == "NaN" || retainDigits < 0) throw "first argument (retainDigits) must be number and positive";
+    if ((typeof retainDigits != "number" || !/^(?!0)\d+$/.test(retainDigits) || parseFloat(retainDigits).toString() == "NaN") && undefined!==retainDigits) throw "first argument (retainDigits) must be a positive integer or not passed in";
     if (typeof meet5carry != "boolean" && undefined !== meet5carry) throw "second argument (meet5carry) must be boolean or not passed in";
-    meet5carry = undefined===meet5carry ? true : meet5carry; // 默认遇5进位
+    retainDigits = undefined===retainDigits ? 0 : retainDigits;
+	meet5carry = undefined===meet5carry ? true : meet5carry; // 默认遇5进位
     if (this.toString().indexOf(".") > -1) {
-        // 用正则提取数字的整数、小数、和是否进位依据部分
+        // 用正则提取数字的整数、保留小数、和是否进位依据
         return Number(this.toString().replace(new RegExp("(\\d+)\\.(\\d{" + retainDigits + "})(\\d?)\\d*"), function(match,pattern1,pattern2,pattern3,index) {
             return (Number(pattern1+pattern2) + (Number(pattern3)>4&&(meet5carry||Number(pattern3)>5) ? 1 : 0)) / Math.pow(10,pattern2.length);
         }));
