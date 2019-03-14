@@ -44,7 +44,7 @@ Number.prototype.toFixed = function(retainDigits, meet5carry) {
     if ((typeof retainDigits != "number" || !/^(?!0)\d+$/.test(retainDigits) || parseFloat(retainDigits).toString() == "NaN") && undefined!==retainDigits) throw "first argument (retainDigits) must be a positive integer or not passed in";
     if (typeof meet5carry != "boolean" && undefined !== meet5carry) throw "second argument (meet5carry) must be boolean or not passed in";
     retainDigits = undefined===retainDigits ? 0 : retainDigits;
-	meet5carry = undefined===meet5carry ? true : meet5carry; // 默认遇5进位
+    meet5carry = undefined===meet5carry ? true : meet5carry; // 默认遇5进位
     if (this.toString().indexOf(".") > -1) {
         // 用正则提取数字的整数、保留小数、和是否进位依据
         return Number(this.toString().replace(new RegExp("(\\d+)\\.(\\d{" + retainDigits + "})(\\d?)\\d*"), function(match,pattern1,pattern2,pattern3,index) {
