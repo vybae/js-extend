@@ -24,7 +24,9 @@ demo
     minus(num): 减函数，参数为Number类型
     multiply(num): 乘函数，参数为Number类型
     divide(num): 除函数，参数为不为0的Number类型
-    toFixed(retainDigits, meet5carry): 小数去尾函数，第一个参数为小数保留位数，必须是正整数或不传，第二个参数为遇5是否进位的逻辑，必须是布尔值或不传
+    toFixed(retainDigits, meet5carry): 小数去尾函数
+            参数retainDigits: 小数保留位数，必须是正整数或不传
+	    参数meet5carry: 遇5是否进位的逻辑，必须是布尔值或不传
 ##### 在部分浏览器中存在如下精度偏差现象
     0.1 + 0.2 != 0.3 // true
     0.3 - 0.2 != 0.1 // true
