@@ -20,9 +20,9 @@
  * 要达到效果sum 会根据a和b的和自动变化，sum = a + b
  * 代码：
     var test1 = linkTrigger.init({a:1,b:2,sum:3,sum2:4}, 
-	// property为触发节点名称
-	// relatedProps为本节点所关联的触发节点，参数用关联节点名称的字符串，多个关联节点用字符串数组即可
-	// rule为被触发的执行规则，可用字符串或函数，函数为参数时需要注意内部引用外部变量作用域的问题
+    // property为触发节点名称
+    // relatedProps为本节点所关联的触发节点，参数用关联节点名称的字符串，多个关联节点用字符串数组即可
+    // rule为被触发的执行规则，可用字符串或函数，函数为参数时需要注意内部引用外部变量作用域的问题
     [{property:"a",relatedProps:"sum"},
     {property:"b",relatedProps:"sum"},
     // 字符串的回调方式
@@ -88,13 +88,13 @@ function LinkTrigger() {
     // obj 初始化的json对象
     // rules 关联规则
     this.init = function (obj, rules) {
-    	var arr = [];
-    	if (rules instanceof Array && rules.length > 0) {
-	    	for (var i=0; i<rules.length; i++) {
-	    		var r = rules[i];
-	    		arr.push({__property:r.property,__relatedProps:r.relatedProps instanceof Array?r.relatedProps:!!r.relatedProps?[r.relatedProps]:[],__rule:r.rule});
-	    	}
-    	}
+        var arr = [];
+        if (rules instanceof Array && rules.length > 0) {
+            for (var i=0; i<rules.length; i++) {
+                var r = rules[i];
+                arr.push({__property:r.property,__relatedProps:r.relatedProps instanceof Array?r.relatedProps:!!r.relatedProps?[r.relatedProps]:[],__rule:r.rule});
+            }
+        }
         return __constructor(obj, arr);
     };
     // 动态追加
@@ -110,12 +110,12 @@ function LinkTrigger() {
         if (!!info) {
             var map = info.map.split(".");
             var arr = [];
-        	if (rules instanceof Array && rules.length > 0) {
-    	    	for (var i=0; i<rules.length; i++) {
-    	    		var r = rules[i];
-    	    		arr.push({__property:r.property,__relatedProps:r.relatedProps instanceof Array?r.relatedProps:!!r.relatedProps?[r.relatedProps]:[],__rule:r.rule});
-    	    	}
-        	}
+            if (rules instanceof Array && rules.length > 0) {
+                for (var i=0; i<rules.length; i++) {
+                    var r = rules[i];
+                    arr.push({__property:r.property,__relatedProps:r.relatedProps instanceof Array?r.relatedProps:!!r.relatedProps?[r.relatedProps]:[],__rule:r.rule});
+                }
+            }
             __constructor(info.data, rules, {root:info.root,map:map});
         }
     };
@@ -451,17 +451,17 @@ function LinkTrigger() {
                 r = Number(a.replace(/\./g,"")) / Number(b.replace(/\./g,""));
             return sub > 0 ? r / adapterNum : r * adapterNum;
         };
-        this.toFixed = function(len) {
-            if (typeof len != "number" && parseFloat(len).toString() == "NaN" || len < 0) throw "argument must be number and positive";
-            if (this.value.toString().indexOf(".") > -1) {
-                // 用正则提取数字的整数、小数、和是否进位依据部分
-                return Number(this.value.toString().replace(new RegExp("(\\d+)\\.(\\d{"+len+"})(\\d?)\\d*"), function(match,pattern1,pattern2,pattern3,index) {
-                    return (Number(pattern1+pattern2)+(Number(pattern3)>4?1:0))/Math.pow(10,pattern2.length);
+        this.toFixed = function(retainDigits,meet5carry) {
+            if ((typeof retainDigits != "number" || !/^(?!0)\d+$/.test(retainDigits) || parseFloat(retainDigits).toString() == "NaN") && undefined!==retainDigits) throw "first argument (retainDigits) must be a positive integer or not passed in";
+            if (typeof meet5carry != "boolean" && undefined !== meet5carry) throw "second argument (meet5carry) must be boolean or not passed in";
+            retainDigits = undefined===retainDigits ? 0 : retainDigits;
+            meet5carry = undefined===meet5carry ? true : meet5carry; // 默认遇5进位
+            if (this.toString().indexOf(".") > -1) {
+                // 用正则提取数字的整数、保留小数、和是否进位依据
+                return Number(this.toString().replace(new RegExp("(\\d+)\\.(\\d{" + retainDigits + "})(\\d?)\\d*"), function(match,pattern1,pattern2,pattern3,index) {
+                    return (Number(pattern1+pattern2) + (Number(pattern3)>4&&(meet5carry||Number(pattern3)>5) ? 1 : 0)) / Math.pow(10,pattern2.length);
                 }));
-            } else return this.value;
-        };
-        this.toString = function () {
-            return this.value.toString();
+            } else return this;
         }
         Object.defineProperties(this, {
             "value": {
