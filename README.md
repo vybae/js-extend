@@ -1,17 +1,46 @@
-link-trigger
+JavaScript扩展util
 =
+
+javascript精度问题修改
+-
+通过为原型prototype扩展方法，解决js浮点运算时的精度偏差
+
+### 文件
+float-cal-util.js
+
 javascript链式触发器
 -
 动态监听json对象，为json对象提供事件的链式触发功能，当值改变时依次执行json对象关联的所有对象的执行规则
 
-文档介绍
--
-link-trigger.js   ---- 链式触发器<br>
-float-cal-util.js ---- 原生js浮点计算bug修复，以及统一各主流浏览器的小数进位时的规则(四舍五入)
+### 文件
+link-trigger.js
 
 demo
 -
+
 ### 例1
+##### float-cal-util.js 说明
+    add(num): 加函数，参数为Number类型
+    minus(num): 减函数，参数为Number类型
+    multiply(num): 乘函数，参数为Number类型
+    divide(num): 除函数，参数为不为0的Number类型
+    toFixed(retainDigits, meet5carry): 小数去尾函数，第一个参数为小数保留位数，必须是正整数或不传，第二个参数为遇5是否进位的逻辑，必须是布尔值或不传
+##### 在部分浏览器中存在如下精度偏差现象
+    0.1 + 0.2 != 0.3 // true
+    0.3 - 0.2 != 0.1 // true
+    0.699 * 100 != 69.9 // true
+    9.9 / 3 != 3.3 // true
+    (2.55).toFixed(1) // 2.5
+##### 代码：
+    (0.1).add(0.2) != 0.3 // false
+    (0.3).minus(0.2) != 0.1 // false
+    (0.699).multiply(100) != 69.9 // false
+    (9.9).divide(3) != 3.3 // false
+    (2.55).toFixed() // 3
+    (2.55).toFixed(1) // 2.6
+    (2.55).toFixed(1, false) // 2.5
+
+### 例2
 ##### 要达到效果sum 会根据a和b的和自动变化，sum = a + b
 ##### 代码：
     var test1 = linkTrigger.init({a:1,b:2,sum:3,sum2:4},
@@ -42,7 +71,7 @@ test1.a.addLinkElement(test1.sum2)<br>
 test1.a.delLinkElement(test1.sum)
 控制台输出结果:  test1.sum2=5
  
-### 例2
+### 例3
 ##### 在例1的基础上引入递归关系
     数据结构:
     {
