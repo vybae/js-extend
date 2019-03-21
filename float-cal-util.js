@@ -82,8 +82,8 @@ var floatCalUtil = function() {
     /**
      *  除法函数，用来得到精确的除法结果
      *  javascript的除法结果会有误差，在两个浮点数相除的时候会比较明显。这个函数返回较为精确的除法结果。
-     * @param arg1
-     * @param arg2
+     * @param arg1 被除数
+     * @param arg2 除数
      * @returns {number} arg1除以arg2的精确结果
      */
     util.div = function (arg1, arg2) {
@@ -100,11 +100,14 @@ var floatCalUtil = function() {
         return result;
     };
 
-    // 四舍五入
-    // 重写toFixed，浏览器之间遇5进位判断混乱，部分浏览器下toFixed遇5不进位(比如2.55 toFixed(1) 为2.5)，部分遇5进位
-    // number: 被格式化的浮点数
-    // retainDigits:  保留小数的位数，参数默认值为0，必须为正整数或不传
-    // meet5carry:  是否遇5进位的逻辑，参数默认值为true，必须为布尔值或不传
+    /**
+     * 四舍五入
+     * 重写toFixed，浏览器之间遇5进位判断混乱，部分浏览器下toFixed遇5不进位(比如2.55 toFixed(1) 为2.5)，部分遇5进位
+     * @param number 被格式化的浮点数
+     * @param retainDigits 保留小数的位数，参数默认值为0，必须为正整数或不传
+     * @param meet5carry 是否遇5进位的逻辑，参数默认值为true，必须为布尔值或不传
+     * @returns {number}
+     */
     util.toFixed = function(number, retainDigits, meet5carry) {
         if (typeof number != "number" || parseFloat(number).toString() == "NaN")
             throw "argument must be number";
@@ -128,18 +131,23 @@ var floatCalUtil = function() {
     return util;
 }();
 
+// 加
 Number.prototype.add = function (arg) {
     return floatCalUtil.add(this, arg);
 };
+// 减
 Number.prototype.sub = function (arg) {
     return floatCalUtil.sub(this, arg);
 };
+// 乘
 Number.prototype.mul = function (arg) {
     return floatCalUtil.mul(this, arg);
 };
+// 除
 Number.prototype.div = function (arg) {
     return floatCalUtil.div(this, arg);
 };
+// 小数精确保留位数，四舍五入
 Number.prototype.toFixed = function (retainDigits, meet5carry) {
     return floatCalUtil.toFixed(this, retainDigits, meet5carry);
 };
