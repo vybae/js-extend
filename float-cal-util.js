@@ -131,7 +131,7 @@ var floatCalUtil = function() {
             throw "argument must be number";
         if ((typeof retainDigits != "number" || !/^(?!0)\d+$/.test(retainDigits) || parseFloat(retainDigits).toString() == "NaN") && undefined!==retainDigits)
             throw "first argument (retainDigits) must be a positive integer or not passed in";
-        if (!(num > Number.MIN_SAFE_INTEGER && num < Number.MAX_SAFE_INTEGER))
+        if (!(number > Number.MIN_SAFE_INTEGER && number < Number.MAX_SAFE_INTEGER))
             throw "first argument must be between -9007199254740991 and 9007199254740991";
         if (typeof meet5carry != "boolean" && undefined !== meet5carry)
             throw "second argument (meet5carry) must be boolean or not passed in";
